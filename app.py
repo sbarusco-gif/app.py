@@ -13,7 +13,16 @@ st.title("⚖️ Nota Spese Tributaria Professionale")
 # --- INPUT DATI (SIDEBAR) ---
 st.sidebar.header("Dati Procedimento")
 sede = st.sidebar.text_input("Sede Corte", "BIELLA").upper()
-grado = st.sidebar.selectbox("Grado", ["I GRADO", "II GRADO"])
+grado_selezione = st.sidebar.selectbox("Grado", ["I GRADO", "II GRADO"])
+
+# Conversione grado in dicitura estesa per il Word
+if grado_selezione == "I GRADO":
+    grado_header = "DI PRIMO GRADO"
+    grado_competenza = "di primo grado"
+else:
+    grado_header = "DI SECONDO GRADO"
+    grado_competenza = "di secondo grado"
+
 rgr = st.sidebar.text_input("R.G.R. n.", "123/2024")
 
 indeterminato = st.sidebar.checkbox("Valore Indeterminato")
@@ -67,20 +76,19 @@ totale_liquidabile = imponibile + iva
 def create_professional_word():
     doc = Document()
     
-    # IMPOSTAZIONI STILE GLOBALE: CALIBRI 12, INTERLINEA 1.5
+    # STILE: CALIBRI 12, INTERLINEA 1.5
     style = doc.styles['Normal']
     font = style.font
     font.name = 'Calibri'
     font.size = Pt(12)
-    # Impostazione interlinea a 1.5
     style.paragraph_format.line_spacing = 1.5
-    # Rimuoviamo spaziatura extra tra paragrafi dello stesso stile per pulizia
     style.paragraph_format.space_after = Pt(6)
 
     # 1. INTESTAZIONE
     h1 = doc.add_paragraph()
     h1.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run1 = h1.add_run(f"ALLA CORTE DI GIUSTIZIA TRIBUTARIA DI {grado} DI {sede}")
+    # Utilizzo della dicitura DI PRIMO GRADO / DI SECONDO GRADO
+    run1 = h1.add_run(f"ALLA CORTE DI GIUSTIZIA TRIBUTARIA {grado_header} DI {sede}")
     run1.bold = True
 
     doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -110,7 +118,8 @@ def create_professional_word():
 
     doc.add_paragraph("\nDEPOSITANO").alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph("la presente nota spese:")
-    doc.add_paragraph(f"Competenza: Corte di giustizia tributaria di {grado.lower()}")
+    # Utilizzo della dicitura di primo grado / di secondo grado
+    doc.add_paragraph(f"Competenza: Corte di giustizia tributaria {grado_competenza}")
     doc.add_paragraph(f"Valore della causa: {testo_valore}")
 
     # 3. TABELLA COMPENSI
@@ -167,7 +176,7 @@ def create_professional_word():
     doc.save(target)
     return target.getvalue()
 
-# --- INTERFACCIA STREAMLIT ---
+# --- INTERFACCIA ---
 if st.button("Genera Nota Spese Word"):
     file_bytes = create_professional_word()
     st.download_button(
