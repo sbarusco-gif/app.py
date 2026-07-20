@@ -46,9 +46,6 @@ else:
     grado_header = f"DI SECONDO GRADO {regione_scelta.upper()}"
     grado_competenza = f"di secondo grado {regione_scelta.lower()}"
 
-# Località fissa per la firma come richiesto
-localita_firma = "Padova"
-
 rgr = st.sidebar.text_input("R.G.R. n.", "123/2024")
 
 # GESTIONE VALORE
@@ -131,14 +128,14 @@ def create_professional_word():
     doc.add_paragraph(f"Competenza: Corte di giustizia tributaria {grado_competenza}")
     doc.add_paragraph(f"Valore della causa: {testo_valore}")
 
-    # 3. TABELLE
+    # 3. TABELLA COMPENSI
     table = doc.add_table(rows=1, cols=2)
     table.columns[0].width = Cm(10)
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = 'Fase'; hdr_cells[1].text = 'Compenso'
     hdr_cells[1].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
 
-    fasi = [("Fase di studio:", f"€ {fase_studio:,.2f}"), ("Fase introduttiva:", f"€ {fase_intro:,.2f}"), 
+    fasi = [("Fase di studio della controversia:", f"€ {fase_studio:,.2f}"), ("Fase introduttiva del giudizio:", f"€ {fase_intro:,.2f}"), 
             ("Fase decisionale:", f"€ {fase_dec:,.2f}"), ("Compenso tabellare", f"€ {comp_tabellare:,.2f}")]
     for n, v in fasi:
         row = table.add_row().cells
@@ -148,9 +145,9 @@ def create_professional_word():
 
     doc.add_paragraph("\nPROSPETTO FINALE").bold = True
     table2 = doc.add_table(rows=0, cols=2)
-    finali = [("Compenso tabellare", f"€ {comp_tabellare:,.2f}"), ("Spese generali (15%)", f"€ {spese_gen:,.2f}"),
+    finali = [("Compenso tabellare", f"€ {comp_tabellare:,.2f}"), ("Spese generali (15% sul compenso totale)", f"€ {spese_gen:,.2f}"),
               ("Cassa Previdenza (4%)", f"€ {cpa:,.2f}"), ("Totale imponibile", f"€ {imponibile:,.2f}"),
-              ("IVA 22%", f"€ {iva:,.2f}"), ("IPOTESI DI COMPENSO LIQUIDABILE", f"€ {totale_liquidabile:,.2f}")]
+              ("IVA 22% su Imponibile", f"€ {iva:,.2f}"), ("IPOTESI DI COMPENSO LIQUIDABILE", f"€ {totale_liquidabile:,.2f}")]
     for n, v in finali:
         r = table2.add_row().cells
         r[0].text = n; r[1].text = v
@@ -158,16 +155,24 @@ def create_professional_word():
         if n in ["Totale imponibile", "IPOTESI DI COMPENSO LIQUIDABILE"]: r[0].paragraphs[0].runs[0].bold = True; r[1].paragraphs[0].runs[0].bold = True
 
     doc.add_paragraph("\nCon osservanza.")
-    # Località fissa Padova come richiesto
-    doc.add_paragraph(f"Padova, {datetime.date.today().strftime('%d/%m/%Y')}")
-    doc.add_paragraph("\nSebastiano Barusco - Firmato digitalmente")
+    
+    # --- LOGICA DATA IN LETTERE ---
+    mesi = {1: "Gennaio", 2: "Febbraio", 3: "Marzo", 4: "Aprile", 5: "Maggio", 6: "Giugno",
+            7: "Luglio", 8: "Agosto", 9: "Settembre", 10: "Ottobre", 11: "Novembre", 12: "Dicembre"}
+    oggi = datetime.date.today()
+    data_estesa = f"Padova, {oggi.day} {mesi[oggi.month]} {oggi.year}"
+    
+    doc.add_paragraph(data_estesa)
+    
+    # Firma con firmato digitalmente a capo
+    p_firma = doc.add_paragraph("\nSebastiano Barusco")
+    p_firma.add_run("\nFirmato digitalmente")
 
     target = BytesIO()
     doc.save(target)
     return target.getvalue()
 
 # --- INTERFACCIA ---
-st.success(f"Scaglione: {scaglione_esteso}")
 if st.button("Genera Word"):
     st.download_button(label="📥 Scarica Word", data=create_professional_word(), 
                        file_name=f"Nota_Spese_{cliente.replace(' ','_')}.docx")
