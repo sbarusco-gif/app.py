@@ -65,12 +65,12 @@ dn = st.sidebar.text_input("Data di nascita", "21/03/1959")
 cf = st.sidebar.text_input("Codice Fiscale", "BNZFRC59C61Z613C")
 res = st.sidebar.text_input("Residenza", "Sagliano Micca (BI), via Grosso n. 8")
 
-# Logica genere
-titolo_cli = "signora" if genere == "Femminile" else "signor"
+# Logica genere corretta
+prep_titolo = "della signora" if genere == "Femminile" else "del signor"
 nascita_cli = "nata" if genere == "Femminile" else "nato"
 
 # --- GENERATORE DOCUMENTO ---
-def create_doc(v_calc, t_val, g_h, g_c, rgr_n, s_sez, d_udi, c_nome, c_ln, c_dn, c_cf, c_res, t_cli, n_cli):
+def create_doc(v_calc, t_val, g_h, g_c, rgr_n, s_sez, d_udi, c_nome, c_ln, c_dn, c_cf, c_res, t_prep, n_cli):
     doc = Document()
     style = doc.styles['Normal']
     style.font.name, style.font.size = 'Calibri', Pt(12)
@@ -99,17 +99,17 @@ def create_doc(v_calc, t_val, g_h, g_c, rgr_n, s_sez, d_udi, c_nome, c_ln, c_dn,
     doc.add_paragraph("Nota spese ex art. 15, D.Lgs. 546/1992").alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # Corpo
+    # Corpo (Correzione preposizione del/della)
     p_body = doc.add_paragraph()
     p_body.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-    p_body.add_run("Il prof. dott. Mario Rovetti ed il dott. Sebastiano Barusco con studio in Padova, via Cavazzana 5 (Barusco Rovetti & Associati, tel. 049-8752918, PEC: sebastiano.barusco@legalmail.it), difensori del ")
-    p_body.add_run(f"{t_cli} {c_nome}").bold = True
+    p_body.add_run("Il prof. dott. Mario Rovetti ed il dott. Sebastiano Barusco con studio in Padova, via Cavazzana 5 (Barusco Rovetti & Associati, tel. 049-8752918, PEC: sebastiano.barusco@legalmail.it), difensori ")
+    p_body.add_run(f"{t_prep} {c_nome}").bold = True
     p_body.add_run(f", {n_cli} a {c_ln} il {c_dn}, C.F. {c_cf}, residente in {c_res}")
 
     doc.add_paragraph("\nDEPOSITANO").alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph(f"Competenza: Corte di giustizia tributaria {g_c}")
 
-    # Tabella
+    # Tabella Professionale
     table = doc.add_table(rows=0, cols=2)
     table.style = 'Table Grid'
     table.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -148,10 +148,10 @@ def create_doc(v_calc, t_val, g_h, g_c, rgr_n, s_sez, d_udi, c_nome, c_ln, c_dn,
     doc.save(out)
     return out.getvalue()
 
-# --- INTERFACCIA ---
+# --- INTERFACCIA STREAMLIT ---
 if st.button("Genera Nota Spese"):
     try:
-        doc_bytes = create_doc(val_calc, txt_val, grado_h, grado_c, rgr, sez, dt_udienza, cli, ln, dn, cf, res, titolo_cli, nascita_cli)
+        doc_bytes = create_doc(val_calc, txt_val, grado_h, grado_c, rgr, sez, dt_udienza, cli, ln, dn, cf, res, prep_titolo, nascita_cli)
         st.download_button("📥 Scarica Word", doc_bytes, f"Nota_{cli.replace(' ','_')}.docx")
     except Exception as e:
         st.error(f"Errore: {e}")
