@@ -6,7 +6,7 @@ import datetime
 from io import BytesIO
 
 # --- CONFIGURAZIONE PAGINA ---
-st.set_page_config(page_title="Nota Spese Tributaria - Indeterminato", page_icon="⚖️")
+st.set_page_config(page_title="Nota Spese Tributaria", page_icon="⚖️")
 
 st.title("⚖️ Nota Spese Tributaria Professionale")
 
@@ -22,18 +22,18 @@ indeterminato = st.sidebar.checkbox("Valore Indeterminato")
 if indeterminato:
     complessita = st.sidebar.selectbox("Complessità della causa", ["Bassa", "Media (Standard)", "Alta"])
     if complessita == "Bassa":
-        valore_per_calcolo = 25000 # Scaglione 5k-26k
+        valore_per_calcolo = 25000 
         testo_valore = "Valore Indeterminato (complessità bassa: scaglione € 5.201 - € 26.000)"
     elif complessita == "Media (Standard)":
-        valore_per_calcolo = 250000 # Scaglione 26k-260k
+        valore_per_calcolo = 250000 
         testo_valore = "Valore Indeterminato (complessità media: scaglione € 26.001 - € 260.000)"
     else:
-        valore_per_calcolo = 500000 # Scaglione 260k-520k
+        valore_per_calcolo = 500000 
         testo_valore = "Valore Indeterminato (complessità alta: scaglione € 260.001 - € 520.000)"
 else:
     valore_lite = st.sidebar.number_input("Valore della lite (€)", min_value=0.0, value=15000.0)
     valore_per_calcolo = valore_lite
-    testo_valore = f"€ {valore_lite:,.2f}"
+    testo_valore = f"da € {valore_per_calcolo:,.2f}" # Formattazione come da screenshot
 
 st.sidebar.header("Dati Cliente")
 cliente = st.sidebar.text_input("Nome Cliente", "Federica Benzi")
@@ -54,48 +54,46 @@ def get_params(v):
 
 p = get_params(valore_per_calcolo)
 scaglione_testo = p[4]
+if not indeterminato: testo_valore = scaglione_testo
+
 fase_studio, fase_intro, fase_dec = p[0], p[1], p[3]
 comp_tabellare = fase_studio + fase_intro + fase_dec
 
-# Calcoli Fiscali
 spese_gen = comp_tabellare * 0.15
 cpa = (comp_tabellare + spese_gen) * 0.04
 imponibile = comp_tabellare + spese_gen + cpa
 iva = imponibile * 0.22
 totale_liquidabile = imponibile + iva
 
-# --- GENERAZIONE WORD (IDENTICO AL MODELLO) ---
+# --- GENERAZIONE WORD ---
 def create_professional_word():
     doc = Document()
-    font_name = 'Calibri'
     
-    # 1. INTESTAZIONE
+    # Intestazione centrata
     h1 = doc.add_paragraph()
     h1.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r1 = h1.add_run(f"ALLA CORTE DI GIUSTIZIA TRIBUTARIA DI {grado} DI {sede}")
-    r1.bold = True
-    r1.font.name = font_name
-    
-    for _ in range(2):
-        p_ast = doc.add_paragraph("* * *")
-        p_ast.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        if _ == 0:
-            h2 = doc.add_paragraph()
-            h2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            r2 = h2.add_run("Nota spese ex art. 15, D.Lgs. 546/1992")
-            r2.bold = True
-            r2.font.name = font_name
+    run1 = h1.add_run(f"ALLA CORTE DI GIUSTIZIA TRIBUTARIA DI {grado} DI {sede}")
+    run1.bold = True
+    run1.font.size = Pt(12)
 
-    # 2. CORPO
+    doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    h2 = doc.add_paragraph()
+    h2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run2 = h2.add_run("Nota spese ex art. 15, D.Lgs. 546/1992")
+    run2.bold = True
+
+    doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    # Corpo testo giustificato (JUSTIFY)
     p_intro = doc.add_paragraph()
-    p_intro.alignment = WD_ALIGN_PARAGRAPH.BOTH
+    p_intro.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     p_intro.add_run("Il ").bold = False
     p_intro.add_run("prof. dott. Mario Rovetti").bold = True
     p_intro.add_run(" (C.F. RVTMRA63T23A859T), iscritto all’Albo dei Dottori Commercialisti e degli Esperti Contabili di Biella al n. 106/A ed il ")
     p_intro.add_run("dott. Sebastiano Barusco").bold = True
     p_intro.add_run(" (C.F. BRSSST66C17L736M), iscritto all’Albo dei Dottori Commercialisti e degli Esperti Contabili di Padova al n. 667/A ed, con studio in Padova, via Cavazzana 5 (")
     
-    # Sottolineatura contatti
     run_und = p_intro.add_run("Barusco Rovetti & Associati, tel. 049-8752918, e-mail: segreteria@baruscorovetti.it, indirizzi di posta elettronica certificata: sebastiano.barusco@legalmail.it e studiorovetti@pec.studiorovetti.it")
     run_und.underline = True
     
@@ -108,17 +106,12 @@ def create_professional_word():
     doc.add_paragraph(f"Competenza: Corte di giustizia tributaria di {grado.lower()}")
     doc.add_paragraph(f"Valore della causa: {testo_valore}")
 
-    # 3. TABELLE
     # Tabella Compensi
     table = doc.add_table(rows=1, cols=2)
-    table.columns[0].width = Cm(10)
-    table.columns[1].width = Cm(5)
-    
+    table.style = 'Table Grid'
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = 'Fase'
     hdr_cells[1].text = 'Compenso'
-    hdr_cells[0].paragraphs[0].runs[0].bold = True
-    hdr_cells[1].paragraphs[0].runs[0].bold = True
     hdr_cells[1].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
 
     fasi_list = [
@@ -154,30 +147,22 @@ def create_professional_word():
         r[0].text = desc
         r[1].text = val
         r[1].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        if "TOTALE" in desc.upper() or "IPOTESI" in desc.upper():
+        if desc in ["Totale imponibile", "IPOTESI DI COMPENSO LIQUIDABILE"]:
             r[0].paragraphs[0].runs[0].bold = True
             r[1].paragraphs[0].runs[0].bold = True
 
     doc.add_paragraph("\nCon osservanza.")
     doc.add_paragraph("\nSebastiano Barusco - Firmato digitalmente")
 
-    # Footer paginazione
-    section = doc.sections[0]
-    footer = section.footer
-    p_footer = footer.paragraphs[0]
-    p_footer.text = "\t\tPagina 1 di 1"
-    p_footer.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-
     target = BytesIO()
     doc.save(target)
     return target.getvalue()
 
 # --- INTERFACCIA ---
-st.info(f"Scaglione applicato: {scaglione_testo}")
-if st.button("Genera Documento Word"):
+if st.button("Genera Nota Spese"):
     file_bytes = create_professional_word()
     st.download_button(
-        label="📥 Scarica Word",
+        label="📥 Scarica Documento Word",
         data=file_bytes,
         file_name=f"Nota_Spese_{cliente.replace(' ','_')}.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
