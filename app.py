@@ -47,6 +47,8 @@ else:
     grado_competenza = f"di secondo grado {regione_scelta.lower()}"
 
 rgr = st.sidebar.text_input("R.G.R. n.", "123/2024")
+sezione = st.sidebar.text_input("Sezione (facoltativa)", "")
+data_udienza = st.sidebar.text_input("Data udienza (facoltativa - es. 01.01.2026)", "")
 
 # GESTIONE VALORE
 indeterminato = st.sidebar.checkbox("Valore Indeterminato")
@@ -98,11 +100,19 @@ def create_professional_word():
     style.paragraph_format.line_spacing = 1.5
     style.paragraph_format.space_after = Pt(6)
 
-    # 1. INTESTAZIONE
+    # 1. INTESTAZIONE COMPLETA (CORTE + SEZIONE + UDIENZA)
     h1 = doc.add_paragraph()
     h1.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run1 = h1.add_run(f"ALLA CORTE DI GIUSTIZIA TRIBUTARIA {grado_header}")
     run1.bold = True
+    
+    if sezione:
+        run1.add_break()
+        run1.add_run(f"SEZIONE {sezione.upper()}")
+        
+    if data_udienza:
+        run1.add_break()
+        run1.add_run(f"UDIENZA DEL {data_udienza}")
 
     doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
     h2 = doc.add_paragraph()
@@ -127,6 +137,8 @@ def create_professional_word():
     doc.add_paragraph("\nDEPOSITANO").alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph(f"Competenza: Corte di giustizia tributaria {grado_competenza}")
     doc.add_paragraph(f"Valore della causa: {testo_valore}")
+    
+    # Rimosso il duplicato della data udienza qui sotto per lasciarlo solo nell'intestazione
 
     # 3. TABELLA COMPENSI
     table = doc.add_table(rows=1, cols=2)
@@ -156,7 +168,6 @@ def create_professional_word():
 
     doc.add_paragraph("\nCon osservanza.")
     
-    # --- LOGICA DATA IN LETTERE ---
     mesi = {1: "Gennaio", 2: "Febbraio", 3: "Marzo", 4: "Aprile", 5: "Maggio", 6: "Giugno",
             7: "Luglio", 8: "Agosto", 9: "Settembre", 10: "Ottobre", 11: "Novembre", 12: "Dicembre"}
     oggi = datetime.date.today()
@@ -164,7 +175,6 @@ def create_professional_word():
     
     doc.add_paragraph(data_estesa)
     
-    # Firma con firmato digitalmente a capo
     p_firma = doc.add_paragraph("\nSebastiano Barusco")
     p_firma.add_run("\nFirmato digitalmente")
 
@@ -173,6 +183,6 @@ def create_professional_word():
     return target.getvalue()
 
 # --- INTERFACCIA ---
-if st.button("Genera Word"):
+if st.button("Genera Nota Spese Word"):
     st.download_button(label="📥 Scarica Word", data=create_professional_word(), 
                        file_name=f"Nota_Spese_{cliente.replace(' ','_')}.docx")
