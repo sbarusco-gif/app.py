@@ -7,31 +7,11 @@ from docx.oxml import OxmlElement
 import datetime
 from io import BytesIO
 
-# --- DATABASE SEDI CON PREPOSIZIONI MINUSCOLE ---
-REGIONI_II_GRADO = [
-    "dell'Abruzzo", "della Basilicata", "della Calabria", "della Campania", 
-    "dell'Emilia-Romagna", "del Friuli-Venezia Giulia", "del Lazio", "della Liguria", 
-    "della Lombardia", "delle Marche", "del Molise", "del Piemonte", "della Puglia", 
-    "della Sardegna", "della Sicilia", "della Toscana", "del Trentino-Alto Adige", 
-    "dell'Umbria", "della Valle d'Aosta", "del Veneto"
-]
+# --- DATABASE SEDI ---
+REGIONI_II_GRADO = ["dell'Abruzzo", "della Basilicata", "della Calabria", "della Campania", "dell'Emilia-Romagna", "del Friuli-Venezia Giulia", "del Lazio", "della Liguria", "della Lombardia", "delle Marche", "del Molise", "del Piemonte", "della Puglia", "della Sardegna", "della Sicilia", "della Toscana", "del Trentino-Alto Adige", "dell'Umbria", "della Valle d'Aosta", "del Veneto"]
+CITTA_I_GRADO = ["Agrigento", "Alessandria", "Ancona", "Aosta", "Arezzo", "Ascoli Piceno", "Asti", "Avellino", "Bari", "Barletta", "Belluno", "Benevento", "Bergamo", "Biella", "Bologna", "Bolzano", "Brescia", "Brindisi", "Cagliari", "Caltanissetta", "Campobasso", "Caserta", "Cassino", "Catania", "Catanzaro", "Chieti", "Como", "Cosenza", "Cremona", "Crotone", "Cuneo", "Enna", "Fermo", "Ferrara", "Firenze", "Foggia", "Forlì", "Frosinone", "Genova", "Gorizia", "Grosseto", "Imperia", "Isernia", "L'Aquila", "La Spezia", "Latina", "Lecce", "Lecco", "Livorno", "Lodi", "Lucca", "Macerata", "Mantova", "Massa Carrara", "Matera", "Messina", "Milano", "Modena", "Monza", "Napoli", "Novara", "Nuoro", "Oristano", "Padova", "Palermo", "Parma", "Pavia", "Perugia", "Pesaro", "Pescara", "Piacenza", "Pisa", "Pistoia", "Pordenone", "Potenza", "Prato", "Ragusa", "Ravenna", "Reggio Calabria", "Reggio Emilia", "Rieti", "Rimini", "Roma", "Rovigo", "Salerno", "Sassari", "Savona", "Siena", "Siracusa", "Sondrio", "Taranto", "Teramo", "Terni", "Torino", "Trani", "Trapani", "Trento", "Treviso", "Trieste", "Udine", "Varese", "Venezia", "Verbano-Cusio-Ossola", "Vercelli", "Verona", "Vibo Valentia", "Vicenza", "Viterbo"]
 
-CITTA_I_GRADO = [
-    "Agrigento", "Alessandria", "Ancona", "Aosta", "Arezzo", "Ascoli Piceno", "Asti", "Avellino", "Bari", 
-    "Barletta", "Belluno", "Benevento", "Bergamo", "Biella", "Bologna", "Bolzano", "Brescia", "Brindisi", 
-    "Cagliari", "Caltanissetta", "Campobasso", "Caserta", "Cassino", "Catania", "Catanzaro", "Chieti", 
-    "Como", "Cosenza", "Cremona", "Crotone", "Cuneo", "Enna", "Fermo", "Ferrara", "Firenze", "Foggia", 
-    "Forlì", "Frosinone", "Genova", "Gorizia", "Grosseto", "Imperia", "Isernia", "L'Aquila", "La Spezia", 
-    "Latina", "Lecce", "Lecco", "Livorno", "Lodi", "Lucca", "Macerata", "Mantova", "Massa Carrara", 
-    "Matera", "Messina", "Milano", "Modena", "Monza", "Napoli", "Novara", "Nuoro", "Oristano", "Padova", 
-    "Palermo", "Parma", "Pavia", "Perugia", "Pesaro", "Pescara", "Piacenza", "Pisa", "Pistoia", "Pordenone", 
-    "Potenza", "Prato", "Ragusa", "Ravenna", "Reggio Calabria", "Reggio Emilia", "Rieti", "Rimini", "Roma", 
-    "Rovigo", "Salerno", "Sassari", "Savona", "Siena", "Siracusa", "Sondrio", "Taranto", "Teramo", "Terni", 
-    "Torino", "Trani", "Trapani", "Trento", "Treviso", "Trieste", "Udine", "Varese", "Venezia", "Verbano-Cusio-Ossola", 
-    "Vercelli", "Verona", "Vibo Valentia", "Vicenza", "Viterbo"
-]
-
-# --- FUNZIONI DI SUPPORTO ---
+# --- FUNZIONI SUPPORTO ---
 def get_params(v):
     if v <= 1100: return (270.0, 270.0, 140.0, 340.0, "fino a € 1.100")
     elif v <= 5200: return (485.0, 405.0, 270.0, 610.0, "da € 1.101 a € 5.200")
@@ -46,28 +26,25 @@ def set_cell_shading(cell, color):
     shd.set(qn('w:fill'), color)
     tc_pr.append(shd)
 
-# --- CONFIGURAZIONE STREAMLIT ---
+# --- CONFIGURAZIONE ---
 st.set_page_config(page_title="Nota Spese Pro", page_icon="⚖️")
 st.title("⚖️ Nota Spese Tributaria Professionale")
 
 # --- SIDEBAR: PROCEDIMENTO ---
 st.sidebar.header("Procedimento")
-grado_selezione = st.sidebar.selectbox("Grado", ["I GRADO", "II GRADO"])
-if grado_selezione == "I GRADO":
+grado_sel = st.sidebar.selectbox("Grado", ["I GRADO", "II GRADO"])
+if grado_sel == "I GRADO":
     sede = st.sidebar.selectbox("Città", sorted(CITTA_I_GRADO))
-    grado_h, grado_c = f"DI PRIMO GRADO DI {sede.upper()}", f"di Primo Grado di {sede}"
+    g_h, g_c = f"DI PRIMO GRADO DI {sede.upper()}", f"di Primo Grado di {sede}"
 else:
     sede = st.sidebar.selectbox("Regione", sorted(REGIONI_II_GRADO))
-    grado_h, grado_c = f"DI SECONDO GRADO {sede.upper()}", f"di Secondo Grado {sede}"
+    g_h, g_c = f"DI SECONDO GRADO {sede.upper()}", f"di Secondo Grado {sede}"
 
 rgr = st.sidebar.text_input("R.G.R. n.", "123/2024")
 sez = st.sidebar.text_input("Sezione", "")
-usa_udienza = st.sidebar.checkbox("Includere data udienza?")
-dt_udienza = ""
-if usa_udienza:
-    dt_udienza = st.sidebar.date_input("Udienza", datetime.date.today()).strftime("%d.%m.%Y")
+usa_u = st.sidebar.checkbox("Includere data udienza?")
+dt_u = st.sidebar.date_input("Udienza", datetime.date.today()).strftime("%d.%m.%Y") if usa_u else ""
 
-# GESTIONE VALORE
 indet = st.sidebar.checkbox("Valore Indeterminato")
 if indet:
     compl = st.sidebar.selectbox("Complessità", ["Bassa", "Media", "Alta"])
@@ -78,7 +55,10 @@ else:
     val_calc = float(val_lite)
     txt_val = ""
 
-# --- SIDEBAR: DATI CLIENTE ---
+# --- SPESE ESENTI ---
+cut_importo = st.sidebar.number_input("Contributo Unificato (C.U.T.) €", min_value=0.0, value=0.0, step=10.0)
+
+# --- SIDEBAR: CLIENTE ---
 st.sidebar.header("Cliente")
 genere = st.sidebar.radio("Sesso del cliente", ["Femminile", "Maschile"])
 cli = st.sidebar.text_input("Nome e Cognome", "Federica Benzi")
@@ -87,48 +67,49 @@ dn = st.sidebar.text_input("Data di nascita", "21/03/1959")
 cf = st.sidebar.text_input("Codice Fiscale", "BNZFRC59C61Z613C")
 res = st.sidebar.text_input("Residenza", "Sagliano Micca (BI), via Grosso n. 8")
 
-# Logica genere
-prep_titolo = "della signora" if genere == "Femminile" else "del signor"
-nascita_cli = "nata" if genere == "Femminile" else "nato"
+prep_t = "della signora" if genere == "Femminile" else "del signor"
+nasc_c = "nata" if genere == "Femminile" else "nato"
 
 # --- GENERATORE DOCUMENTO ---
-def create_doc(v_calc, t_val, g_h, g_c, rgr_n, s_sez, d_udi, c_nome, c_ln, c_dn, c_cf, c_res, t_prep, n_cli):
+def create_doc():
     doc = Document()
     style = doc.styles['Normal']
     style.font.name, style.font.size = 'Calibri', Pt(12)
     style.paragraph_format.line_spacing, style.paragraph_format.space_after = 1.5, Pt(6)
 
     # Calcoli
-    p = get_params(v_calc)
-    scaglione_etichetta = t_val if t_val != "" else p[4]
-    c_studio, c_intro, c_dec = float(p[0]), float(p[1]), float(p[3])
-    comp_tab = c_studio + c_intro + c_dec
-    s_gen = comp_tab * 0.15
-    cpa = (comp_tab + s_gen) * 0.04
-    imp = comp_tab + s_gen + cpa
+    p = get_params(val_calc)
+    scaglione_lab = txt_val if txt_val != "" else p[4]
+    c_st, c_in, c_de = float(p[0]), float(p[1]), float(p[3])
+    comp_t = c_st + c_in + c_de
+    s_ge = comp_t * 0.15
+    cpa = (comp_t + s_ge) * 0.04
+    imp = comp_t + s_ge + cpa
     iva = imp * 0.22
-    tot = imp + iva
+    tot_liq = imp + iva + cut_importo
 
     # Intestazione
     h = doc.add_paragraph()
     h.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r = h.add_run(f"ALLA CORTE DI GIUSTIZIA TRIBUTARIA {g_h}")
     r.bold = True
-    if s_sez: h.add_run(f"\nSEZIONE {s_sez.upper()}").bold = True
-    if d_udi: h.add_run(f"\nUDIENZA DEL {d_udi}").bold = True
+    if sez: h.add_run(f"\nSEZIONE {sez.upper()}").bold = True
+    if dt_u: h.add_run(f"\nUDIENZA DEL {dt_u}").bold = True
     
     doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph("Nota spese ex art. 15, D.Lgs. 546/1992").alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     # Corpo
-    p_body = doc.add_paragraph()
-    p_body.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-    p_body.add_run("Il prof. dott. Mario Rovetti ed il dott. Sebastiano Barusco con studio in Padova, via Cavazzana 5 (Barusco Rovetti & Associati, tel. 049-8752918, PEC: sebastiano.barusco@legalmail.it), difensori ")
-    p_body.add_run(f"{t_prep} {c_nome}").bold = True
-    p_body.add_run(f", {n_cli} a {c_ln} il {c_dn}, C.F. {c_cf}, residente in {c_res}")
+    p_b = doc.add_paragraph()
+    p_b.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p_b.add_run("Il prof. dott. Mario Rovetti ed il dott. Sebastiano Barusco con studio in Padova, via Cavazzana 5 (Barusco Rovetti & Associati, tel. 049-8752918, PEC: sebastiano.barusco@legalmail.it), difensori ")
+    p_b.add_run(f"{prep_t} {cli}").bold = True
+    p_b.add_run(f", {nasc_c} a {ln} il {dn}, C.F. {cf}, residente in {res}")
 
     doc.add_paragraph("\nDEPOSITANO").alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_paragraph("la seguente nota spese:").alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
     doc.add_paragraph(f"Competenza: Corte di Giustizia Tributaria {g_c}")
 
     # Tabella Professionale
@@ -148,16 +129,18 @@ def create_doc(v_calc, t_val, g_h, g_c, rgr_n, s_sez, d_udi, c_nome, c_ln, c_dn,
             set_cell_shading(row[0], bg)
             set_cell_shading(row[1], bg)
 
-    add_row("VALORE DELLA CAUSA", scaglione_etichetta, True, "E7E7E7")
-    add_row("Fase di studio della controversia", f"€ {c_studio:,.2f}")
-    add_row("Fase introduttiva del giudizio", f"€ {c_intro:,.2f}")
-    add_row("Fase decisionale", f"€ {c_dec:,.2f}")
-    add_row("COMPENSO TABELLARE", f"€ {comp_tab:,.2f}", True, "F2F2F2")
-    add_row("Spese generali (15% su compenso)", f"€ {s_gen:,.2f}")
+    add_row("VALORE DELLA CAUSA", scaglione_lab, True, "E7E7E7")
+    add_row("Fase di studio della controversia", f"€ {c_st:,.2f}")
+    add_row("Fase introduttiva del giudizio", f"€ {c_in:,.2f}")
+    add_row("Fase decisionale", f"€ {c_de:,.2f}")
+    add_row("COMPENSO TABELLARE", f"€ {comp_t:,.2f}", True, "F2F2F2")
+    add_row("Spese generali (15% su compenso)", f"€ {s_ge:,.2f}")
     add_row("C.P.A. (4% su imponibile)", f"€ {cpa:,.2f}")
     add_row("TOTALE IMPONIBILE", f"€ {imp:,.2f}", True)
     add_row("I.V.A. (22%)", f"€ {iva:,.2f}")
-    add_row("IPOTESI DI COMPENSO LIQUIDABILE", f"€ {tot:,.2f}", True, "D9D9D9")
+    if cut_importo > 0:
+        add_row("Contributo Unificato Tributario (C.U.T.)", f"€ {cut_importo:,.2f}")
+    add_row("IPOTESI DI COMPENSO LIQUIDABILE", f"€ {tot_liq:,.2f}", True, "D9D9D9")
 
     # Firma
     mesi = {1:"Gennaio", 2:"Febbraio", 3:"Marzo", 4:"Aprile", 5:"Maggio", 6:"Giugno", 7:"Luglio", 8:"Agosto", 9:"Settembre", 10:"Ottobre", 11:"Novembre", 12:"Dicembre"}
@@ -173,7 +156,6 @@ def create_doc(v_calc, t_val, g_h, g_c, rgr_n, s_sez, d_udi, c_nome, c_ln, c_dn,
 # --- INTERFACCIA STREAMLIT ---
 if st.button("Genera Nota Spese"):
     try:
-        doc_bytes = create_doc(val_calc, txt_val, grado_h, grado_c, rgr, sez, dt_udienza, cli, ln, dn, cf, res, prep_titolo, nascita_cli)
-        st.download_button("📥 Scarica Word", doc_bytes, f"Nota_{cli.replace(' ','_')}.docx")
+        st.download_button("📥 Scarica Word", create_doc(), f"Nota_{cli.replace(' ','_')}.docx")
     except Exception as e:
         st.error(f"Errore: {e}")
