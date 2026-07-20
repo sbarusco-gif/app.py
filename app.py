@@ -41,12 +41,13 @@ if grado_selezione == "I GRADO":
     sede_citta = st.sidebar.selectbox("Sede della Corte (Città)", sorted(CITTA_I_GRADO))
     grado_header = f"DI PRIMO GRADO DI {sede_citta.upper()}"
     grado_competenza = f"di primo grado di {sede_citta.lower()}"
-    localita_firma = sede_citta
 else:
     regione_scelta = st.sidebar.selectbox("Sede della Corte (Regione)", sorted(REGIONI_II_GRADO))
     grado_header = f"DI SECONDO GRADO {regione_scelta.upper()}"
     grado_competenza = f"di secondo grado {regione_scelta.lower()}"
-    localita_firma = "Padova"
+
+# Località fissa per la firma come richiesto
+localita_firma = "Padova"
 
 rgr = st.sidebar.text_input("R.G.R. n.", "123/2024")
 
@@ -157,7 +158,8 @@ def create_professional_word():
         if n in ["Totale imponibile", "IPOTESI DI COMPENSO LIQUIDABILE"]: r[0].paragraphs[0].runs[0].bold = True; r[1].paragraphs[0].runs[0].bold = True
 
     doc.add_paragraph("\nCon osservanza.")
-    doc.add_paragraph(f"{localita_firma}, {datetime.date.today().strftime('%d/%m/%Y')}")
+    # Località fissa Padova come richiesto
+    doc.add_paragraph(f"Padova, {datetime.date.today().strftime('%d/%m/%Y')}")
     doc.add_paragraph("\nSebastiano Barusco - Firmato digitalmente")
 
     target = BytesIO()
