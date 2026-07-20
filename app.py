@@ -47,8 +47,14 @@ else:
     grado_competenza = f"di secondo grado {regione_scelta.lower()}"
 
 rgr = st.sidebar.text_input("R.G.R. n.", "123/2024")
-sezione = st.sidebar.text_input("Sezione (facoltativa)", "")
-data_udienza = st.sidebar.text_input("Data udienza (facoltativa - es. 01.01.2026)", "")
+sezione_input = st.sidebar.text_input("Sezione (facoltativa)", "")
+
+# CALENDARIO PER DATA UDIENZA
+usa_udienza = st.sidebar.checkbox("Includere data udienza?")
+data_udienza_formattata = ""
+if usa_udienza:
+    data_scelta = st.sidebar.date_input("Seleziona data udienza", datetime.date.today())
+    data_udienza_formattata = data_scelta.strftime("%d.%m.%Y")
 
 # GESTIONE VALORE
 indeterminato = st.sidebar.checkbox("Valore Indeterminato")
@@ -100,19 +106,22 @@ def create_professional_word():
     style.paragraph_format.line_spacing = 1.5
     style.paragraph_format.space_after = Pt(6)
 
-    # 1. INTESTAZIONE COMPLETA (CORTE + SEZIONE + UDIENZA)
+    # 1. INTESTAZIONE (CORTE + SEZIONE + UDIENZA)
     h1 = doc.add_paragraph()
     h1.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run1 = h1.add_run(f"ALLA CORTE DI GIUSTIZIA TRIBUTARIA {grado_header}")
-    run1.bold = True
     
-    if sezione:
-        run1.add_break()
-        run1.add_run(f"SEZIONE {sezione.upper()}")
+    run_corte = h1.add_run(f"ALLA CORTE DI GIUSTIZIA TRIBUTARIA {grado_header}")
+    run_corte.bold = True
+    
+    if sezione_input:
+        h1.add_run("\n")
+        run_sez = h1.add_run(f"SEZIONE {sezione_input.upper()}")
+        run_sez.bold = True
         
-    if data_udienza:
-        run1.add_break()
-        run1.add_run(f"UDIENZA DEL {data_udienza}")
+    if usa_udienza and data_udienza_formattata:
+        h1.add_run("\n")
+        run_udi = h1.add_run(f"UDIENZA DEL {data_udienza_formattata}")
+        run_udi.bold = True
 
     doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
     h2 = doc.add_paragraph()
@@ -137,8 +146,6 @@ def create_professional_word():
     doc.add_paragraph("\nDEPOSITANO").alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph(f"Competenza: Corte di giustizia tributaria {grado_competenza}")
     doc.add_paragraph(f"Valore della causa: {testo_valore}")
-    
-    # Rimosso il duplicato della data udienza qui sotto per lasciarlo solo nell'intestazione
 
     # 3. TABELLA COMPENSI
     table = doc.add_table(rows=1, cols=2)
