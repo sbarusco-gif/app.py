@@ -5,7 +5,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 import datetime
 from io import BytesIO
 
-# --- CONFIGURAZIONE PAGINA ---
+# --- CONFIGURAZIONE PAGINA STREAMLIT ---
 st.set_page_config(page_title="Nota Spese Tributaria", page_icon="⚖️")
 
 st.title("⚖️ Nota Spese Tributaria Professionale")
@@ -67,13 +67,15 @@ totale_liquidabile = imponibile + iva
 def create_professional_word():
     doc = Document()
     
-    # IMPOSTAZIONI STILE GLOBALE: CALIBRI 12, INTERLINEA DOPPIA
+    # IMPOSTAZIONI STILE GLOBALE: CALIBRI 12, INTERLINEA 1.5
     style = doc.styles['Normal']
     font = style.font
     font.name = 'Calibri'
     font.size = Pt(12)
-    # Interlinea doppia (2.0)
-    style.paragraph_format.line_spacing = 2.0
+    # Impostazione interlinea a 1.5
+    style.paragraph_format.line_spacing = 1.5
+    # Rimuoviamo spaziatura extra tra paragrafi dello stesso stile per pulizia
+    style.paragraph_format.space_after = Pt(6)
 
     # 1. INTESTAZIONE
     h1 = doc.add_paragraph()
@@ -111,11 +113,8 @@ def create_professional_word():
     doc.add_paragraph(f"Competenza: Corte di giustizia tributaria di {grado.lower()}")
     doc.add_paragraph(f"Valore della causa: {testo_valore}")
 
-    # 3. TABELLE (Nota: le tabelle solitamente hanno interlinea singola per chiarezza, 
-    # ma qui seguono lo stile se non diversamente specificato)
-    
+    # 3. TABELLA COMPENSI
     table = doc.add_table(rows=1, cols=2)
-    # Impostiamo larghezza per evitare che si stringa troppo
     table.columns[0].width = Cm(10)
     table.columns[1].width = Cm(5)
     
@@ -168,7 +167,7 @@ def create_professional_word():
     doc.save(target)
     return target.getvalue()
 
-# --- INTERFACCIA ---
+# --- INTERFACCIA STREAMLIT ---
 if st.button("Genera Nota Spese Word"):
     file_bytes = create_professional_word()
     st.download_button(
