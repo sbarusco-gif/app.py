@@ -26,11 +26,11 @@ def set_cell_shading(cell, color):
     shd.set(qn('w:fill'), color)
     tc_pr.append(shd)
 
-# --- CONFIGURAZIONE ---
+# --- CONFIGURAZIONE STREAMLIT ---
 st.set_page_config(page_title="Nota Spese Pro", page_icon="⚖️")
 st.title("⚖️ Nota Spese Tributaria Professionale")
 
-# --- SIDEBAR ---
+# --- SIDEBAR: PROCEDIMENTO ---
 st.sidebar.header("Procedimento")
 grado_selezione = st.sidebar.selectbox("Grado", ["I GRADO", "II GRADO"])
 if grado_selezione == "I GRADO":
@@ -45,6 +45,7 @@ sez = st.sidebar.text_input("Sezione", "")
 usa_udienza = st.sidebar.checkbox("Includere data udienza?")
 dt_udienza = st.sidebar.date_input("Udienza", datetime.date.today()).strftime("%d.%m.%Y") if usa_udienza else ""
 
+# GESTIONE VALORE
 indet = st.sidebar.checkbox("Valore Indeterminato")
 if indet:
     compl = st.sidebar.selectbox("Complessità", ["Bassa", "Media", "Alta"])
@@ -55,25 +56,29 @@ else:
     val_calc = float(val_lite)
     txt_val = ""
 
-# --- DATI CLIENTE ---
+# --- SIDEBAR: DATI CLIENTE ---
 st.sidebar.header("Cliente")
-cli = st.sidebar.text_input("Nome", "Federica Benzi")
-ln = st.sidebar.text_input("Nascita (Luogo)", "Montevideo (EE)")
-dn = st.sidebar.text_input("Nascita (Data)", "21/03/1959")
-cf = st.sidebar.text_input("C.F.", "BNZFRC59C61Z613C")
+genere = st.sidebar.radio("Sesso del cliente", ["Femminile", "Maschile"])
+cli = st.sidebar.text_input("Nome e Cognome", "Federica Benzi")
+ln = st.sidebar.text_input("Luogo di nascita", "Montevideo (EE)")
+dn = st.sidebar.text_input("Data di nascita", "21/03/1959")
+cf = st.sidebar.text_input("Codice Fiscale", "BNZFRC59C61Z613C")
 res = st.sidebar.text_input("Residenza", "Sagliano Micca (BI), via Grosso n. 8")
 
+# Logica genere
+titolo_cli = "signora" if genere == "Femminile" else "signor"
+nascita_cli = "nata" if genere == "Femminile" else "nato"
+
 # --- GENERATORE DOCUMENTO ---
-def create_doc(v_calc, t_val, g_h, g_c, rgr_n, s_sez, d_udi, c_nome, c_ln, c_dn, c_cf, c_res):
+def create_doc(v_calc, t_val, g_h, g_c, rgr_n, s_sez, d_udi, c_nome, c_ln, c_dn, c_cf, c_res, t_cli, n_cli):
     doc = Document()
     style = doc.styles['Normal']
     style.font.name, style.font.size = 'Calibri', Pt(12)
     style.paragraph_format.line_spacing, style.paragraph_format.space_after = 1.5, Pt(6)
 
-    # Parametri calcolati freschi
+    # Calcoli
     p = get_params(v_calc)
     scaglione_etichetta = t_val if t_val != "" else p[4]
-    
     c_studio, c_intro, c_dec = float(p[0]), float(p[1]), float(p[3])
     comp_tab = c_studio + c_intro + c_dec
     s_gen = comp_tab * 0.15
@@ -97,9 +102,9 @@ def create_doc(v_calc, t_val, g_h, g_c, rgr_n, s_sez, d_udi, c_nome, c_ln, c_dn,
     # Corpo
     p_body = doc.add_paragraph()
     p_body.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-    p_body.add_run("Il prof. dott. Mario Rovetti ed il dott. Sebastiano Barusco con studio in Padova, via Cavazzana 5 (Barusco Rovetti & Associati, tel. 049-8752918, PEC: sebastiano.barusco@legalmail.it), difensori della signora ")
-    p_body.add_run(f"{c_nome}").bold = True
-    p_body.add_run(f", nata a {c_ln} il {c_dn}, C.F. {c_cf}, residente in {c_res}")
+    p_body.add_run("Il prof. dott. Mario Rovetti ed il dott. Sebastiano Barusco con studio in Padova, via Cavazzana 5 (Barusco Rovetti & Associati, tel. 049-8752918, PEC: sebastiano.barusco@legalmail.it), difensori del ")
+    p_body.add_run(f"{t_cli} {c_nome}").bold = True
+    p_body.add_run(f", {n_cli} a {c_ln} il {c_dn}, C.F. {c_cf}, residente in {c_res}")
 
     doc.add_paragraph("\nDEPOSITANO").alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph(f"Competenza: Corte di giustizia tributaria {g_c}")
@@ -146,7 +151,7 @@ def create_doc(v_calc, t_val, g_h, g_c, rgr_n, s_sez, d_udi, c_nome, c_ln, c_dn,
 # --- INTERFACCIA ---
 if st.button("Genera Nota Spese"):
     try:
-        doc_bytes = create_doc(val_calc, txt_val, grado_h, grado_c, rgr, sez, dt_udienza, cli, ln, dn, cf, res)
+        doc_bytes = create_doc(val_calc, txt_val, grado_h, grado_c, rgr, sez, dt_udienza, cli, ln, dn, cf, res, titolo_cli, nascita_cli)
         st.download_button("📥 Scarica Word", doc_bytes, f"Nota_{cli.replace(' ','_')}.docx")
     except Exception as e:
-        st.error(f"Si è verificato un errore durante la generazione: {e}")
+        st.error(f"Errore: {e}")
