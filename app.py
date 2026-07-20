@@ -7,9 +7,29 @@ from docx.oxml import OxmlElement
 import datetime
 from io import BytesIO
 
-# --- DATABASE SEDI ---
-REGIONI_II_GRADO = ["dell'Abruzzo", "della Basilicata", "della Calabria", "della Campania", "dell'Emilia-Romagna", "del Friuli-Venezia Giulia", "del Lazio", "della Liguria", "della Lombardia", "delle Marche", "del Molise", "del Piemonte", "della Puglia", "della Sardegna", "della Sicilia", "della Toscana", "del Trentino-Alto Adige", "dell'Umbria", "della Valle d'Aosta", "del Veneto"]
-CITTA_I_GRADO = ["Agrigento", "Alessandria", "Ancona", "Aosta", "Arezzo", "Ascoli Piceno", "Asti", "Avellino", "Bari", "Barletta", "Belluno", "Benevento", "Bergamo", "Biella", "Bologna", "Bolzano", "Brescia", "Brindisi", "Cagliari", "Caltanissetta", "Campobasso", "Caserta", "Cassino", "Catania", "Catanzaro", "Chieti", "Como", "Cosenza", "Cremona", "Crotone", "Cuneo", "Enna", "Fermo", "Ferrara", "Firenze", "Foggia", "Forlì", "Frosinone", "Genova", "Gorizia", "Grosseto", "Imperia", "Isernia", "L'Aquila", "La Spezia", "Latina", "Lecce", "Lecco", "Livorno", "Lodi", "Lucca", "Macerata", "Mantova", "Massa Carrara", "Matera", "Messina", "Milano", "Modena", "Monza", "Napoli", "Novara", "Nuoro", "Oristano", "Padova", "Palermo", "Parma", "Pavia", "Perugia", "Pesaro", "Pescara", "Piacenza", "Pisa", "Pistoia", "Pordenone", "Potenza", "Prato", "Ragusa", "Ravenna", "Reggio Calabria", "Reggio Emilia", "Rieti", "Rimini", "Roma", "Rovigo", "Salerno", "Sassari", "Savona", "Siena", "Siracusa", "Sondrio", "Taranto", "Teramo", "Terni", "Torino", "Trani", "Trapani", "Trento", "Treviso", "Trieste", "Udine", "Varese", "Venezia", "Verbano-Cusio-Ossola", "Vercelli", "Verona", "Vibo Valentia", "Vicenza", "Viterbo"]
+# --- DATABASE SEDI CON PREPOSIZIONI MINUSCOLE ---
+REGIONI_II_GRADO = [
+    "dell'Abruzzo", "della Basilicata", "della Calabria", "della Campania", 
+    "dell'Emilia-Romagna", "del Friuli-Venezia Giulia", "del Lazio", "della Liguria", 
+    "della Lombardia", "delle Marche", "del Molise", "del Piemonte", "della Puglia", 
+    "della Sardegna", "della Sicilia", "della Toscana", "del Trentino-Alto Adige", 
+    "dell'Umbria", "della Valle d'Aosta", "del Veneto"
+]
+
+CITTA_I_GRADO = [
+    "Agrigento", "Alessandria", "Ancona", "Aosta", "Arezzo", "Ascoli Piceno", "Asti", "Avellino", "Bari", 
+    "Barletta", "Belluno", "Benevento", "Bergamo", "Biella", "Bologna", "Bolzano", "Brescia", "Brindisi", 
+    "Cagliari", "Caltanissetta", "Campobasso", "Caserta", "Cassino", "Catania", "Catanzaro", "Chieti", 
+    "Como", "Cosenza", "Cremona", "Crotone", "Cuneo", "Enna", "Fermo", "Ferrara", "Firenze", "Foggia", 
+    "Forlì", "Frosinone", "Genova", "Gorizia", "Grosseto", "Imperia", "Isernia", "L'Aquila", "La Spezia", 
+    "Latina", "Lecce", "Lecco", "Livorno", "Lodi", "Lucca", "Macerata", "Mantova", "Massa Carrara", 
+    "Matera", "Messina", "Milano", "Modena", "Monza", "Napoli", "Novara", "Nuoro", "Oristano", "Padova", 
+    "Palermo", "Parma", "Pavia", "Perugia", "Pesaro", "Pescara", "Piacenza", "Pisa", "Pistoia", "Pordenone", 
+    "Potenza", "Prato", "Ragusa", "Ravenna", "Reggio Calabria", "Reggio Emilia", "Rieti", "Rimini", "Roma", 
+    "Rovigo", "Salerno", "Sassari", "Savona", "Siena", "Siracusa", "Sondrio", "Taranto", "Teramo", "Terni", 
+    "Torino", "Trani", "Trapani", "Trento", "Treviso", "Trieste", "Udine", "Varese", "Venezia", "Verbano-Cusio-Ossola", 
+    "Vercelli", "Verona", "Vibo Valentia", "Vicenza", "Viterbo"
+]
 
 # --- FUNZIONI DI SUPPORTO ---
 def get_params(v):
@@ -35,15 +55,17 @@ st.sidebar.header("Procedimento")
 grado_selezione = st.sidebar.selectbox("Grado", ["I GRADO", "II GRADO"])
 if grado_selezione == "I GRADO":
     sede = st.sidebar.selectbox("Città", sorted(CITTA_I_GRADO))
-    grado_h, grado_c = f"DI PRIMO GRADO DI {sede.upper()}", f"di primo grado di {sede.lower()}"
+    grado_h, grado_c = f"DI PRIMO GRADO DI {sede.upper()}", f"di Primo Grado di {sede}"
 else:
     sede = st.sidebar.selectbox("Regione", sorted(REGIONI_II_GRADO))
-    grado_h, grado_c = f"DI SECONDO GRADO {sede.upper()}", f"di secondo grado {sede.lower()}"
+    grado_h, grado_c = f"DI SECONDO GRADO {sede.upper()}", f"di Secondo Grado {sede}"
 
 rgr = st.sidebar.text_input("R.G.R. n.", "123/2024")
 sez = st.sidebar.text_input("Sezione", "")
 usa_udienza = st.sidebar.checkbox("Includere data udienza?")
-dt_udienza = st.sidebar.date_input("Udienza", datetime.date.today()).strftime("%d.%m.%Y") if usa_udienza else ""
+dt_udienza = ""
+if usa_udienza:
+    dt_udienza = st.sidebar.date_input("Udienza", datetime.date.today()).strftime("%d.%m.%Y")
 
 # GESTIONE VALORE
 indet = st.sidebar.checkbox("Valore Indeterminato")
@@ -65,7 +87,7 @@ dn = st.sidebar.text_input("Data di nascita", "21/03/1959")
 cf = st.sidebar.text_input("Codice Fiscale", "BNZFRC59C61Z613C")
 res = st.sidebar.text_input("Residenza", "Sagliano Micca (BI), via Grosso n. 8")
 
-# Logica genere corretta
+# Logica genere
 prep_titolo = "della signora" if genere == "Femminile" else "del signor"
 nascita_cli = "nata" if genere == "Femminile" else "nato"
 
@@ -99,7 +121,7 @@ def create_doc(v_calc, t_val, g_h, g_c, rgr_n, s_sez, d_udi, c_nome, c_ln, c_dn,
     doc.add_paragraph("Nota spese ex art. 15, D.Lgs. 546/1992").alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # Corpo (Correzione preposizione del/della)
+    # Corpo
     p_body = doc.add_paragraph()
     p_body.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     p_body.add_run("Il prof. dott. Mario Rovetti ed il dott. Sebastiano Barusco con studio in Padova, via Cavazzana 5 (Barusco Rovetti & Associati, tel. 049-8752918, PEC: sebastiano.barusco@legalmail.it), difensori ")
@@ -107,7 +129,7 @@ def create_doc(v_calc, t_val, g_h, g_c, rgr_n, s_sez, d_udi, c_nome, c_ln, c_dn,
     p_body.add_run(f", {n_cli} a {c_ln} il {c_dn}, C.F. {c_cf}, residente in {c_res}")
 
     doc.add_paragraph("\nDEPOSITANO").alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_paragraph(f"Competenza: Corte di giustizia tributaria {g_c}")
+    doc.add_paragraph(f"Competenza: Corte di Giustizia Tributaria {g_c}")
 
     # Tabella Professionale
     table = doc.add_table(rows=0, cols=2)
