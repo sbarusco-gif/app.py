@@ -12,16 +12,18 @@ st.title("⚖️ Nota Spese Tributaria Professionale")
 
 # --- INPUT DATI (SIDEBAR) ---
 st.sidebar.header("Dati Procedimento")
-sede = st.sidebar.text_input("Sede Corte", "BIELLA").upper()
 grado_selezione = st.sidebar.selectbox("Grado", ["I GRADO", "II GRADO"])
 
-# Conversione grado in dicitura estesa per il Word
 if grado_selezione == "I GRADO":
-    grado_header = "DI PRIMO GRADO"
-    grado_competenza = "di primo grado"
+    sede_input = st.sidebar.text_input("Sede (Città)", "BIELLA").upper()
+    grado_header = f"DI PRIMO GRADO DI {sede_input}"
+    grado_competenza = f"di primo grado di {sede_input.lower()}"
+    localita_firma = sede_input.capitalize()
 else:
-    grado_header = "DI SECONDO GRADO"
-    grado_competenza = "di secondo grado"
+    territorio_input = st.sidebar.text_input("Regione (es. del Veneto, della Lombardia)", "del Veneto")
+    grado_header = f"DI SECONDO GRADO {territorio_input.upper()}"
+    grado_competenza = f"di secondo grado {territorio_input.lower()}"
+    localita_firma = "Padova" # Default per lo studio
 
 rgr = st.sidebar.text_input("R.G.R. n.", "123/2024")
 
@@ -41,16 +43,9 @@ if indeterminato:
 else:
     valore_lite = st.sidebar.number_input("Valore della lite (€)", min_value=0.0, value=15000.0)
     valore_per_calcolo = valore_lite
-    testo_valore = f"da € {valore_per_calcolo:,.2f}"
+    testo_valore = "" # Verrà riempito dallo scaglione sotto
 
-st.sidebar.header("Dati Cliente")
-cliente = st.sidebar.text_input("Nome Cliente", "Federica Benzi")
-luogo_nascita = st.sidebar.text_input("Luogo di nascita", "Montevideo (EE)")
-data_nascita = st.sidebar.text_input("Data di nascita", "21/03/1959")
-cf_cliente = st.sidebar.text_input("C.F. Cliente", "BNZFRC59C61Z613C")
-residenza = st.sidebar.text_input("Residenza", "Sagliano Micca (BI), via Grosso n. 8")
-
-# --- LOGICA CALCOLO ---
+# --- LOGICA CALCOLO PARAMETRI (DM 147/2022) ---
 def get_params(v):
     if v <= 1100: return (270, 270, 140, 340, "fino a € 1.100")
     elif v <= 5200: return (485, 405, 270, 610, "da € 1.101 a € 5.200")
@@ -62,7 +57,7 @@ def get_params(v):
 
 p = get_params(valore_per_calcolo)
 scaglione_testo = p[4]
-if not indeterminato: testo_valore = scaglione_testo
+if not indeterminato: testo_valore = f"da € {scaglione_testo}"
 
 fase_studio, fase_intro, fase_dec = p[0], p[1], p[3]
 comp_tabellare = fase_studio + fase_intro + fase_dec
@@ -71,6 +66,13 @@ cpa = (comp_tabellare + spese_gen) * 0.04
 imponibile = comp_tabellare + spese_gen + cpa
 iva = imponibile * 0.22
 totale_liquidabile = imponibile + iva
+
+st.sidebar.header("Dati Cliente")
+cliente = st.sidebar.text_input("Nome Cliente", "Federica Benzi")
+luogo_nascita = st.sidebar.text_input("Luogo di nascita", "Montevideo (EE)")
+data_nascita = st.sidebar.text_input("Data di nascita", "21/03/1959")
+cf_cliente = st.sidebar.text_input("C.F. Cliente", "BNZFRC59C61Z613C")
+residenza = st.sidebar.text_input("Residenza", "Sagliano Micca (BI), via Grosso n. 8")
 
 # --- GENERAZIONE WORD ---
 def create_professional_word():
@@ -87,8 +89,7 @@ def create_professional_word():
     # 1. INTESTAZIONE
     h1 = doc.add_paragraph()
     h1.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    # Utilizzo della dicitura DI PRIMO GRADO / DI SECONDO GRADO
-    run1 = h1.add_run(f"ALLA CORTE DI GIUSTIZIA TRIBUTARIA {grado_header} DI {sede}")
+    run1 = h1.add_run(f"ALLA CORTE DI GIUSTIZIA TRIBUTARIA {grado_header}")
     run1.bold = True
 
     doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -118,7 +119,6 @@ def create_professional_word():
 
     doc.add_paragraph("\nDEPOSITANO").alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph("la presente nota spese:")
-    # Utilizzo della dicitura di primo grado / di secondo grado
     doc.add_paragraph(f"Competenza: Corte di giustizia tributaria {grado_competenza}")
     doc.add_paragraph(f"Valore della causa: {testo_valore}")
 
@@ -170,6 +170,7 @@ def create_professional_word():
             r[1].paragraphs[0].runs[0].bold = True
 
     doc.add_paragraph("\nCon osservanza.")
+    doc.add_paragraph(f"{localita_firma}, {datetime.date.today().strftime('%d/%m/%Y')}")
     doc.add_paragraph("\nSebastiano Barusco - Firmato digitalmente")
 
     target = BytesIO()
