@@ -16,7 +16,6 @@ sede = st.sidebar.text_input("Sede Corte", "BIELLA").upper()
 grado = st.sidebar.selectbox("Grado", ["I GRADO", "II GRADO"])
 rgr = st.sidebar.text_input("R.G.R. n.", "123/2024")
 
-# GESTIONE VALORE INDETERMINATO
 indeterminato = st.sidebar.checkbox("Valore Indeterminato")
 
 if indeterminato:
@@ -33,7 +32,7 @@ if indeterminato:
 else:
     valore_lite = st.sidebar.number_input("Valore della lite (€)", min_value=0.0, value=15000.0)
     valore_per_calcolo = valore_lite
-    testo_valore = f"da € {valore_per_calcolo:,.2f}" # Formattazione come da screenshot
+    testo_valore = f"da € {valore_per_calcolo:,.2f}"
 
 st.sidebar.header("Dati Cliente")
 cliente = st.sidebar.text_input("Nome Cliente", "Federica Benzi")
@@ -42,7 +41,7 @@ data_nascita = st.sidebar.text_input("Data di nascita", "21/03/1959")
 cf_cliente = st.sidebar.text_input("C.F. Cliente", "BNZFRC59C61Z613C")
 residenza = st.sidebar.text_input("Residenza", "Sagliano Micca (BI), via Grosso n. 8")
 
-# --- LOGICA CALCOLO PARAMETRI ---
+# --- LOGICA CALCOLO ---
 def get_params(v):
     if v <= 1100: return (270, 270, 140, 340, "fino a € 1.100")
     elif v <= 5200: return (485, 405, 270, 610, "da € 1.101 a € 5.200")
@@ -58,7 +57,6 @@ if not indeterminato: testo_valore = scaglione_testo
 
 fase_studio, fase_intro, fase_dec = p[0], p[1], p[3]
 comp_tabellare = fase_studio + fase_intro + fase_dec
-
 spese_gen = comp_tabellare * 0.15
 cpa = (comp_tabellare + spese_gen) * 0.04
 imponibile = comp_tabellare + spese_gen + cpa
@@ -69,12 +67,19 @@ totale_liquidabile = imponibile + iva
 def create_professional_word():
     doc = Document()
     
-    # Intestazione centrata
+    # IMPOSTAZIONI STILE GLOBALE: CALIBRI 12, INTERLINEA DOPPIA
+    style = doc.styles['Normal']
+    font = style.font
+    font.name = 'Calibri'
+    font.size = Pt(12)
+    # Interlinea doppia (2.0)
+    style.paragraph_format.line_spacing = 2.0
+
+    # 1. INTESTAZIONE
     h1 = doc.add_paragraph()
     h1.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run1 = h1.add_run(f"ALLA CORTE DI GIUSTIZIA TRIBUTARIA DI {grado} DI {sede}")
     run1.bold = True
-    run1.font.size = Pt(12)
 
     doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
     
@@ -85,7 +90,7 @@ def create_professional_word():
 
     doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # Corpo testo giustificato (JUSTIFY)
+    # 2. CORPO TESTO
     p_intro = doc.add_paragraph()
     p_intro.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     p_intro.add_run("Il ").bold = False
@@ -106,9 +111,14 @@ def create_professional_word():
     doc.add_paragraph(f"Competenza: Corte di giustizia tributaria di {grado.lower()}")
     doc.add_paragraph(f"Valore della causa: {testo_valore}")
 
-    # Tabella Compensi
+    # 3. TABELLE (Nota: le tabelle solitamente hanno interlinea singola per chiarezza, 
+    # ma qui seguono lo stile se non diversamente specificato)
+    
     table = doc.add_table(rows=1, cols=2)
-    table.style = 'Table Grid'
+    # Impostiamo larghezza per evitare che si stringa troppo
+    table.columns[0].width = Cm(10)
+    table.columns[1].width = Cm(5)
+    
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = 'Fase'
     hdr_cells[1].text = 'Compenso'
@@ -130,7 +140,7 @@ def create_professional_word():
             row[0].paragraphs[0].runs[0].bold = True
             row[1].paragraphs[0].runs[0].bold = True
 
-    # Prospetto Finale
+    # 4. PROSPETTO FINALE
     doc.add_paragraph("\nPROSPETTO FINALE").bold = True
     table2 = doc.add_table(rows=0, cols=2)
     final_rows = [
@@ -159,7 +169,7 @@ def create_professional_word():
     return target.getvalue()
 
 # --- INTERFACCIA ---
-if st.button("Genera Nota Spese"):
+if st.button("Genera Nota Spese Word"):
     file_bytes = create_professional_word()
     st.download_button(
         label="📥 Scarica Documento Word",
