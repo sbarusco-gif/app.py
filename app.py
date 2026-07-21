@@ -11,9 +11,8 @@ from io import BytesIO
 REGIONI = ["dell'Abruzzo", "della Basilicata", "della Calabria", "della Campania", "dell'Emilia-Romagna", "del Friuli-Venezia Giulia", "del Lazio", "della Liguria", "della Lombardia", "delle Marche", "del Molise", "del Piemonte", "della Puglia", "della Sardegna", "della Sicilia", "della Toscana", "del Trentino-Alto Adige", "dell'Umbria", "della Valle d'Aosta", "del Veneto"]
 CITTA = ["Agrigento", "Alessandria", "Ancona", "Aosta", "Arezzo", "Ascoli Piceno", "Asti", "Avellino", "Bari", "Barletta", "Belluno", "Benevento", "Bergamo", "Biella", "Bologna", "Bolzano", "Brescia", "Brindisi", "Cagliari", "Caltanissetta", "Campobasso", "Caserta", "Cassino", "Catania", "Catanzaro", "Chieti", "Como", "Cosenza", "Cremona", "Crotone", "Cuneo", "Enna", "Fermo", "Ferrara", "Firenze", "Foggia", "Forlì", "Frosinone", "Genova", "Gorizia", "Grosseto", "Imperia", "Isernia", "L'Aquila", "La Spezia", "Latina", "Lecce", "Lecco", "Livorno", "Lodi", "Lucca", "Macerata", "Mantova", "Massa Carrara", "Matera", "Messina", "Milano", "Modena", "Monza", "Napoli", "Novara", "Nuoro", "Oristano", "Padova", "Palermo", "Parma", "Pavia", "Perugia", "Pesaro", "Pescara", "Piacenza", "Pisa", "Pistoia", "Pordenone", "Potenza", "Prato", "Ragusa", "Ravenna", "Reggio Calabria", "Reggio Emilia", "Rieti", "Rimini", "Roma", "Rovigo", "Salerno", "Sassari", "Savona", "Siena", "Siracusa", "Sondrio", "Taranto", "Teramo", "Terni", "Torino", "Trani", "Trapani", "Trento", "Treviso", "Trieste", "Udine", "Varese", "Venezia", "Verbano-Cusio-Ossola", "Vercelli", "Verona", "Vibo Valentia", "Vicenza", "Viterbo"]
 
-# --- FUNZIONE RESET MANUALE ---
+# --- FUNZIONE RESET ---
 def reset_procedura():
-    # Testi
     st.session_state["rgr"] = ""
     st.session_state["sez"] = ""
     st.session_state["nome_cli"] = ""
@@ -21,12 +20,11 @@ def reset_procedura():
     st.session_state["data_n"] = ""
     st.session_state["cf_cli"] = ""
     st.session_state["res_cli"] = ""
-    # Numeri
     st.session_state["v_lite"] = 0.0
     st.session_state["cut_val"] = 0.0
-    # Checkbox e altro
     st.session_state["u_check"] = False
     st.session_state["indet"] = False
+    st.session_state["livello_tariffa"] = "Medi"
 
 def set_cell_shading(cell, color):
     tc_pr = cell._element.get_or_add_tcPr()
@@ -42,11 +40,9 @@ def get_params(v):
     elif v <= 260000: return (3375.0, 2230.0, 1620.0, 3850.0, "da € 52.001 a € 260.000")
     else: return (5065.0, 3310.0, 2430.0, 5805.0, "da € 260.001 a € 520.000")
 
-# --- INIZIALIZZAZIONE SESSION STATE ---
-# Inizializziamo le chiavi se non esistono per evitare errori al primo avvio
+# --- INIZIALIZZAZIONE ---
 if "rgr" not in st.session_state: reset_procedura()
 
-# --- APP CONFIG ---
 st.set_page_config(page_title="Nota Spese Pro", page_icon="⚖️")
 st.title("⚖️ Generatore Nota Spese Tributaria")
 
@@ -57,7 +53,6 @@ with st.sidebar:
     
     st.header("Procedimento")
     grado_sel = st.selectbox("Grado", ["I GRADO", "II GRADO"], key="grado_sel")
-    
     if grado_sel == "I GRADO":
         sede = st.selectbox("Sede Corte (Città)", sorted(CITTA), key="sede_citta")
         g_h, g_c = f"DI PRIMO GRADO DI {sede.upper()}", f"di Primo Grado di {sede}"
@@ -68,22 +63,24 @@ with st.sidebar:
     st.text_input("Numero R.G.R.", key="rgr")
     st.text_input("Sezione", key="sez")
     st.checkbox("Includere data udienza?", key="u_check")
-    
     u_data = ""
     if st.session_state["u_check"]:
         u_data = st.date_input("Data Udienza", datetime.date.today(), key="u_data").strftime("%d.%m.%Y")
 
-    st.header("Valore e Spese")
+    st.header("Valore e Complessità")
     st.checkbox("Valore Indeterminato", key="indet")
-    
     if st.session_state["indet"]:
-        compl = st.selectbox("Complessità", ["Bassa", "Media", "Alta"], key="compl")
+        compl = st.selectbox("Scaglione Complessità", ["Bassa", "Media", "Alta"], key="compl")
         v_calc = 25000.0 if compl == "Bassa" else 250000.0 if compl == "Media" else 500000.0
-        val_txt = f"Valore Indeterminato (Complessità {compl.lower()})"
+        val_txt = f"Valore Indeterminato (Scaglione {compl.lower()})"
     else:
         st.number_input("Valore della lite (€)", min_value=0.0, key="v_lite")
         v_calc = float(st.session_state["v_lite"])
         val_txt = ""
+
+    # SELETTORE MINIMI/MEDI/MASSIMI
+    tariffa_sel = st.select_slider("Livello Tariffe (DM 147/2022)", options=["Minimi", "Medi", "Massimi"], key="livello_tariffa")
+    moltiplicatore = 0.5 if tariffa_sel == "Minimi" else 1.5 if tariffa_sel == "Massimi" else 1.0
 
     st.number_input("Contributo Unificato (C.U.T.) €", min_value=0.0, key="cut_val")
 
@@ -99,7 +96,6 @@ with st.sidebar:
 prep = "della signora" if st.session_state["gender"] == "Femminile" else "del signor"
 nasc = "nata" if st.session_state["gender"] == "Femminile" else "nato"
 
-# --- GENERAZIONE DOCUMENTO ---
 def create_doc():
     doc = Document()
     style = doc.styles['Normal']
@@ -109,15 +105,13 @@ def create_doc():
     # Intestazione
     h = doc.add_paragraph()
     h.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r_h = h.add_run(f"ALLA CORTE DI GIUSTIZIA TRIBUTARIA {g_h}")
-    r_h.bold = True
+    run_h = h.add_run(f"ALLA CORTE DI GIUSTIZIA TRIBUTARIA {g_h}")
+    run_h.bold = True
     if st.session_state["sez"]: h.add_run(f"\nSEZIONE {st.session_state['sez'].upper()}").bold = True
     if u_data: h.add_run(f"\nUDIENZA DEL {u_data}").bold = True
 
     doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_nota = doc.add_paragraph()
-    p_nota.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_nota.add_run("Nota spese ex art. 15, D.Lgs. 546/1992").bold = True
+    doc.add_paragraph("Nota spese ex art. 15, D.Lgs. 546/1992").alignment = WD_ALIGN_PARAGRAPH.CENTER
     doc.add_paragraph("* * *").alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     # Corpo
@@ -138,13 +132,15 @@ def create_doc():
     doc.add_paragraph("la seguente nota spese:").alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     doc.add_paragraph(f"Competenza: Corte di Giustizia Tributaria {g_c}").space_after = Pt(12)
 
-    # Calcoli
+    # Calcoli applicando il moltiplicatore
     p_par = get_params(v_calc)
-    scl_final = val_txt if val_txt else p_par[4]
-    tab_c = p_par[0] + p_par[1] + p_par[3]
-    s_gen = tab_c * 0.15
-    cpa = (tab_c + s_gen) * 0.04
-    imp = tab_c + s_gen + cpa
+    scl_final = (val_txt if val_txt else p_par[4]) + f" - Parametri {tariffa_sel}"
+    
+    c_st, c_in, c_de = p_par[0] * moltiplicatore, p_par[1] * moltiplicatore, p_par[3] * moltiplicatore
+    comp_t = c_st + c_in + c_de
+    s_ge = comp_t * 0.15
+    cpa = (comp_t + s_ge) * 0.04
+    imp = comp_t + s_ge + cpa
     iva = imp * 0.22
     tot = imp + iva + st.session_state["cut_val"]
 
@@ -164,12 +160,12 @@ def create_doc():
             set_cell_shading(cells[0], color)
             set_cell_shading(cells[1], color)
 
-    add_r("VALORE DELLA CAUSA", scl_final, True, "EBEBEB")
-    add_r("Fase di studio della controversia", f"€ {p_par[0]:,.2f}")
-    add_r("Fase introduttiva del giudizio", f"€ {p_par[1]:,.2f}")
-    add_r("Fase decisionale", f"€ {p_par[3]:,.2f}")
-    add_r("COMPENSO TABELLARE", f"€ {tab_c:,.2f}", True, "F5F5F5")
-    add_r("Rimborso spese generali (15%)", f"€ {s_gen:,.2f}")
+    add_r("VALORE E LIVELLO TARIFFE", scl_final, True, "EBEBEB")
+    add_r("Fase di studio della controversia", f"€ {c_st:,.2f}")
+    add_r("Fase introduttiva del giudizio", f"€ {c_in:,.2f}")
+    add_r("Fase decisionale", f"€ {c_de:,.2f}")
+    add_r("COMPENSO TABELLARE", f"€ {comp_t:,.2f}", True, "F5F5F5")
+    add_r("Rimborso spese generali (15%)", f"€ {s_ge:,.2f}")
     add_r("Contributo Cassa Previdenza (4%)", f"€ {cpa:,.2f}")
     add_r("TOTALE IMPONIBILE", f"€ {imp:,.2f}", True)
     add_r("I.V.A. (22%)", f"€ {iva:,.2f}")
@@ -187,7 +183,7 @@ def create_doc():
     doc.save(out)
     return out.getvalue()
 
-# --- AZIONE GENERAZIONE ---
+# --- AZIONE ---
 if st.button("🚀 GENERA DOCUMENTO"):
     try:
         st.download_button("📥 Scarica il documento Word", create_doc(), f"Nota_{st.session_state['nome_cli'].replace(' ','_')}.docx")
